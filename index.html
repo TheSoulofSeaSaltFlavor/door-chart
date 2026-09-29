@@ -67,7 +67,25 @@
     margin-top:34px;padding-top:18px;border-top:1px solid var(--line);
     font-size:12px;color:var(--muted);line-height:1.8;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;
   }
-  @media (max-width:760px){body{padding:22px 14px 44px}.grid.two{grid-template-columns:1fr}.h-scatter{height:460px}}
+  @media (max-width:760px){
+    body{padding:18px 12px 40px}
+    header{margin-bottom:20px}
+    .sub{font-size:12.5px}
+    .sub code{font-size:11px;word-break:break-all}
+    .kpis{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:18px}
+    .kpi{padding:13px 14px;border-radius:12px}
+    .kpi b{font-size:23px}
+    .kpi span{font-size:11.5px;margin-top:6px}
+    .grid{gap:12px;margin-top:12px}
+    .grid.two{grid-template-columns:1fr}
+    .card{padding:15px 12px 11px;border-radius:13px}
+    .card-head{flex-wrap:wrap;gap:8px 10px;margin-bottom:4px}
+    .card-head h2{font-size:14.5px}
+    .card-head p{font-size:11.5px}
+    .exp{padding:5px 10px;font-size:11.5px}
+    .eyebrow{font-size:11px;padding:4px 10px;letter-spacing:.06em}
+    .h-bar{height:400px}.h-scatter{height:520px}.h-pareto{height:380px}.h-line{height:330px}.h-donut{height:430px}
+  }
   @media print{body{background:#fff;padding:0}.exp{display:none}.card{break-inside:avoid;box-shadow:none}}
 </style>
 </head>
@@ -234,9 +252,11 @@ const yAxisPct = {
 };
 const catAxis = (data, rot) => ({
   type:"category", data, axisLine:{lineStyle:{color:AXIS}}, axisTick:{show:false},
-  axisLabel:{...FONT, color:INK2, fontSize:10.5, rotate:rot, interval:0},
+  axisLabel:{...FONT, color:INK2, fontSize:MOB?8.5:10.5, rotate:MOB?90:rot, interval:0, margin:MOB?6:8},
 });
 const grid0 = {left:56, right:24, top:34, bottom:34};
+/* == 移动端适配（2026-09-29）== */
+const MOB = window.matchMedia("(max-width:760px)").matches;
 
 /* ═ ① 柱状图 · Top20 + 其余 ═ */
 (function(){
@@ -246,7 +266,7 @@ const grid0 = {left:56, right:24, top:34, bottom:34};
   const val = top.map(r=>pct(r.pct)).concat([pct(restN/total)]);
   const nums = top.map(r=>r.n).concat([restN]);
   echarts.init(document.getElementById("c1")).setOption({
-    textStyle:FONT, grid:{...grid0, bottom:96, top:42},
+    textStyle:FONT, grid:{...grid0, left:MOB?40:56, right:MOB?8:24, bottom:MOB?108:96, top:42},
     tooltip:{...baseTip, trigger:"axis", axisPointer:{type:"shadow"},
       formatter: p => { const i=p[0].dataIndex;
         return "<b>"+cat[i]+"</b><br/>门洞数量："+nums[i]+" 樘<br/>数量占比："+val[i].toFixed(2)+"%"; }},
@@ -264,8 +284,8 @@ const grid0 = {left:56, right:24, top:34, bottom:34};
         }
       })),
       barWidth:"72%",
-      label:{show:true, position:"top", distance:5, ...FONT, fontSize:10.5, fontWeight:600,
-        color:INK2, formatter:p=>p.value.toFixed(2)+"%"},
+      label:{show:true, position:"top", distance:5, ...FONT, fontSize:MOB?8:10.5, fontWeight:600,
+        color:INK2, formatter:p=>(MOB && (p.dataIndex%2))?"":p.value.toFixed(2)+"%"},
     }],
   });
 })();
@@ -275,22 +295,26 @@ function donut(id, items, centerTitle, centerSub, colors){
   echarts.init(document.getElementById(id)).setOption({
     textStyle:FONT,
     tooltip:{...baseTip, trigger:"item", formatter:p=>"<b>"+p.name+"</b><br/>门洞数量："+p.value+" 樘<br/>占比："+p.percent+"%"},
-    legend:{type:"scroll", orient:"vertical", right:0, top:"center", itemWidth:11, itemHeight:11,
-      itemGap:9, ...FONT, textStyle:{fontSize:11, color:INK2},
-      formatter: n => items.find(x=>x.name===n).label},
+    legend: MOB
+      ? {type:"scroll", orient:"horizontal", left:"center", bottom:0, itemWidth:10, itemHeight:10,
+         itemGap:8, ...FONT, textStyle:{fontSize:10, color:INK2},
+         formatter: n => items.find(x=>x.name===n).label}
+      : {type:"scroll", orient:"vertical", right:0, top:"center", itemWidth:11, itemHeight:11,
+         itemGap:9, ...FONT, textStyle:{fontSize:11, color:INK2},
+         formatter: n => items.find(x=>x.name===n).label},
     series:[{
-      type:"pie", radius:["48%","72%"], center:["33%","50%"], startAngle:90, clockwise:false,
+      type:"pie", radius:MOB?["38%","56%"]:["48%","72%"], center:MOB?["50%","38%"]:["33%","50%"], startAngle:90, clockwise:false,
       avoidLabelOverlap:true, minAngle:2,
       itemStyle:{borderColor:"#fcfcfb", borderWidth:1.5, borderRadius:2},
-      label:{show:true, ...FONT, fontSize:11, fontWeight:700, color:INK,
+      label:{show:true, ...FONT, fontSize:MOB?9.5:11, fontWeight:700, color:INK,
         formatter:p=> p.percent>=3.4 ? p.percent.toFixed(2)+"%" : ""},
       labelLine:{show:true, length:8, length2:8, lineStyle:{color:AXIS}},
       emphasis:{scale:true, scaleSize:6, label:{fontSize:13}},
       data:items.map((x,i)=>({name:x.name, value:x.value, itemStyle:{color:colors[i%colors.length]}})),
     }],
     graphic:[
-      {type:"text", left:"33%", top:"47%", style:{text:centerTitle, ...FONT, fontSize:22, fontWeight:800, fill:INK, align:"center"}},
-      {type:"text", left:"33%", top:"58%", style:{text:centerSub, ...FONT, fontSize:11, fill:MUTED, align:"center"}},
+      {type:"text", left:MOB?"50%":"33%", top:MOB?"31%":"47%", style:{text:centerTitle, ...FONT, fontSize:MOB?17:22, fontWeight:800, fill:INK, align:"center"}},
+      {type:"text", left:MOB?"50%":"33%", top:MOB?"42%":"58%", style:{text:centerSub, ...FONT, fontSize:MOB?10:11, fill:MUTED, align:"center"}},
     ],
   });
 }
@@ -327,23 +351,25 @@ function donut(id, items, centerTitle, centerSub, colors){
 (function(){
   const data = rows.map(r=>[r.w, r.h, r.n, Math.pow(Math.min(r.pct/0.09,1),.5), pct(r.pct), r.label]);
   echarts.init(document.getElementById("c2")).setOption({
-    textStyle:FONT, grid:{left:70, right:150, top:20, bottom:56},
+    textStyle:FONT, grid: MOB?{left:56, right:12, top:18, bottom:100}:{left:70, right:150, top:20, bottom:56},
     tooltip:{...baseTip, formatter:p=>{
       const d=p.value;
       return "<b>"+d[5]+"</b><br/>净宽度："+d[0]+" mm<br/>净高度："+d[1]+" mm<br/>门洞数量：<b>"+d[2]+"</b> 樘<br/>数量占比：<b>"+d[4].toFixed(2)+"%</b>";
     }},
-    xAxis:{type:"value", name:"门洞净宽度（mm）", nameLocation:"middle", nameGap:34,
+    xAxis:{type:"value", name:"门洞净宽度（mm）", nameLocation:"middle", nameGap:MOB?28:34,
       nameTextStyle:{...FONT, fontSize:11.5, color:INK2},
       min:500, max:3100, axisLine:{lineStyle:{color:AXIS}}, axisTick:{show:false},
       axisLabel:{...FONT, color:MUTED, fontSize:11},
       splitLine:{lineStyle:{color:GRID, width:1}}},
-    yAxis:{type:"value", name:"门洞净高度（mm）", nameLocation:"middle", nameGap:48,
+    yAxis:{type:"value", name:"门洞净高度（mm）", nameLocation:"middle", nameGap:MOB?34:48,
       nameTextStyle:{...FONT, fontSize:11.5, color:INK2},
       min:1100, max:3000, axisLine:{show:false}, axisTick:{show:false},
       axisLabel:{...FONT, color:MUTED, fontSize:11},
       splitLine:{lineStyle:{color:GRID, width:1}}},
-    visualMap:{type:"continuous", dimension:3, min:0, max:1, right:8, top:"center", itemWidth:12, itemHeight:150,
-      text:["占比高","占比低"], textStyle:{...FONT, fontSize:11, color:MUTED},
+    visualMap:{type:"continuous", dimension:3, min:0, max:1,
+      ...(MOB ? {orient:"horizontal", left:"center", bottom:2, itemWidth:12, itemHeight:110}
+              : {right:8, top:"center", itemWidth:12, itemHeight:150}),
+      text:["占比高","占比低"], textStyle:{...FONT, fontSize:MOB?10:11, color:MUTED},
       inRange:{color:["#e8f1fa","#1f5fa8"]}, calculable:false},
     series:[{
       type:"scatter",
@@ -361,7 +387,7 @@ function donut(id, items, centerTitle, centerSub, colors){
       itemStyle:{opacity:.86, borderColor:"#1f5fa8", borderWidth:.7},
       emphasis:{itemStyle:{opacity:1, borderColor:"#b8451a", borderWidth:1.6}, scale:1.25},
       markLine:{silent:true, symbol:"none", lineStyle:{color:"#e0dfd7", type:[4,4], width:1},
-        label:{...FONT, fontSize:10, color:"#a8a69e", position:"insideEndTop"},
+        label:{...FONT, fontSize:MOB?9:10, color:"#a8a69e", position:"insideEndTop"},
         data:[{yAxis:2200, label:{formatter:"高 2200（284 樘 · 29.37%）"}},
               {yAxis:2000, label:{formatter:"高 2000（159 樘 · 16.44%）"}}]},
     }],
@@ -374,13 +400,13 @@ function donut(id, items, centerTitle, centerSub, colors){
   const bar = rows.map(r=>pct(r.pct));
   const cum = rows.map(r=>+((r.cum_pct)*100).toFixed(2));
   echarts.init(document.getElementById("c3")).setOption({
-    textStyle:FONT, grid:{left:62, right:66, top:46, bottom:44},
+    textStyle:FONT, grid: MOB?{left:40, right:46, top:52, bottom:44}:{left:62, right:66, top:46, bottom:44},
     tooltip:{...baseTip, trigger:"axis", axisPointer:{type:"shadow"},
       formatter: p => {
         const i=p[0].dataIndex, r=rows[i];
         return "<b>第 "+r.rank+" 名　"+r.label+"</b><br/>门洞数量："+r.n+" 樘<br/>占　比："+pct(r.pct).toFixed(2)+"%<br/>累计占比："+cum[i].toFixed(2)+"%<br/>类别："+r.abc+" 类";
       }},
-    legend:{data:["单规格占比","累计占比"], right:76, top:4, itemWidth:14, itemHeight:9,
+    legend:{data:["单规格占比","累计占比"], ...(MOB?{left:"center", top:2}:{right:76, top:4}), itemWidth:MOB?12:14, itemHeight:9,
       ...FONT, textStyle:{fontSize:11.5, color:INK2}},
     xAxis:{type:"category", data:cat, axisLine:{lineStyle:{color:AXIS}}, axisTick:{show:false},
       axisLabel:{...FONT, color:INK2, fontSize:10.5, interval:(i,v)=>["1","22","49","112"].indexOf(v)>=0}},
@@ -396,8 +422,8 @@ function donut(id, items, centerTitle, centerSub, colors){
        barWidth:"82%",
        markLine:{silent:true, symbol:"none", lineStyle:{color:"#9a9890", type:[5,3], width:1},
          label:{...FONT, fontSize:11, color:INK2, position:"insideEndTop", rotate:0, distance:5},
-         data:[{xAxis:"22", label:{formatter:"A 类 22 种\n686 樘 · 70.94%", color:A_C}},
-               {xAxis:"49", label:{formatter:"B 类 27 种\n186 樘 · 19.23%", color:"#3d7fb8"}}]}},
+         data:[{xAxis:"22", label:{formatter: MOB?"A 类 22 种":"A 类 22 种\n686 樘 · 70.94%", color:A_C, distance: MOB?26:5}},
+               {xAxis:"49", label:{formatter: MOB?"B 类 27 种":"B 类 27 种\n186 樘 · 19.23%", color:"#3d7fb8", ...(MOB?{position:"insideMiddleTop"}:{})}}]}},
       {name:"累计占比", type:"line", yAxisIndex:1, data:cum, smooth:false, symbol:"none",
        lineStyle:{color:ORANGE, width:2.4}, z:5,
        markPoint:{symbolSize:9, itemStyle:{color:ORANGE, borderColor:"#fff", borderWidth:1.6},
@@ -405,12 +431,12 @@ function donut(id, items, centerTitle, centerSub, colors){
                 formatter:p=>p.name, backgroundColor:"#fff4ec", borderColor:"#f0b28c", borderWidth:.8,
                 borderRadius:5, padding:[4,7]},
          data:[
-           {name:"前 10 种 = "+cum[9].toFixed(2)+"%", coord:["10", cum[9]], symbolOffset:[72,-30]},
-           {name:"前 31 种 = "+cum[30].toFixed(2)+"%", coord:["31", cum[30]], symbolOffset:[88,30]},
+           {name:"前 10 种 = "+cum[9].toFixed(2)+"%", coord:["10", cum[9]], symbolOffset:MOB?[26,-26]:[72,-30]},
+           {name:"前 31 种 = "+cum[30].toFixed(2)+"%", coord:["31", cum[30]], symbolOffset:MOB?[30,24]:[88,30]},
          ]}},
     ],
     graphic:[
-      {type:"text", left:"83%", top:"32%", style:{text:"C 类 63 种\n95 樘 · 9.82%", ...FONT, fontSize:11.5, fill:"#7d9cba", lineHeight:17, align:"center"}},
+      {type:"text", left:MOB?"70%":"83%", top:"32%", style:{text:"C 类 63 种\n95 樘 · 9.82%", ...FONT, fontSize:MOB?9.5:11.5, fill:"#7d9cba", lineHeight:17, align:"center"}},
     ],
   });
 })();
@@ -418,13 +444,13 @@ function donut(id, items, centerTitle, centerSub, colors){
 /* ═ ⑧ 尺寸递增趋势 ═ */
 (function(){
   echarts.init(document.getElementById("c4")).setOption({
-    textStyle:FONT, grid:{left:62, right:26, top:44, bottom:52},
+    textStyle:FONT, grid: MOB?{left:40, right:14, top:56, bottom:52}:{left:62, right:26, top:44, bottom:52},
     tooltip:{...baseTip, trigger:"axis",
       formatter: p => { const i=p[0].dataIndex;
         return "<b>"+p[0].value[0]+" mm</b><br/>"+p[0].seriesName+"占比：<b>"+p[0].value[1].toFixed(2)+"%</b>（"+p[0].value[2]+" 樘）"; }},
-    legend:{data:["按净宽度","按净高度"], right:0, top:4, itemWidth:14, itemHeight:9,
+    legend:{data:["按净宽度","按净高度"], ...(MOB?{left:"center", top:2}:{right:0, top:4}), itemWidth:MOB?12:14, itemHeight:9,
       ...FONT, textStyle:{fontSize:11.5, color:INK2}},
-    xAxis:{type:"value", min:450, max:3150, name:"门洞洞口尺寸（mm）", nameLocation:"middle", nameGap:32,
+    xAxis:{type:"value", min:450, max:3150, name:"门洞洞口尺寸（mm）", nameLocation:"middle", nameGap:MOB?28:32,
       nameTextStyle:{...FONT, fontSize:11.5, color:INK2},
       axisLine:{lineStyle:{color:AXIS}}, axisTick:{show:false},
       axisLabel:{...FONT, color:MUTED, fontSize:11},
@@ -435,14 +461,14 @@ function donut(id, items, centerTitle, centerSub, colors){
        symbol:"circle", symbolSize:7, lineStyle:{color:BLUE, width:2.2},
        itemStyle:{color:"#fff", borderColor:BLUE, borderWidth:2},
        areaStyle:{color:"rgba(42,120,214,.08)"},
-       label:{show:true, position:"top", ...FONT, fontSize:10.5, fontWeight:700, color:BLUE,
+       label:{show:true, position:"top", ...FONT, fontSize:MOB?9:10.5, fontWeight:700, color:BLUE,
          formatter:p=> (Math.abs(p.value[1]-30.82)<.01||Math.abs(p.value[1]-19.13)<.01||Math.abs(p.value[1]-17.89)<.01)
                        ? p.value[0]+"\n"+p.value[1].toFixed(2)+"%" : ""}},
       {name:"按净高度", type:"line", data:D.height_dist.map(x=>[x.v, +(x.pct*100).toFixed(2), x.n]),
        symbol:"rect", symbolSize:6.5, lineStyle:{color:ORANGE, width:2.2},
        itemStyle:{color:"#fff", borderColor:ORANGE, borderWidth:2},
        areaStyle:{color:"rgba(235,104,52,.08)"},
-       label:{show:true, position:"top", ...FONT, fontSize:10.5, fontWeight:700, color:"#b8451a",
+       label:{show:true, position:"top", ...FONT, fontSize:MOB?9:10.5, fontWeight:700, color:"#b8451a",
          formatter:p=> (Math.abs(p.value[1]-29.37)<.01) ? "2200\n29.37%" :
                        (Math.abs(p.value[1]-16.44)<.01) ? "2000\n16.44%" :
                        (Math.abs(p.value[1]-10.96)<.01) ? "2150\n10.96%" : ""}},
@@ -456,7 +482,12 @@ document.querySelectorAll(".chart").forEach(el=>{
   const ins = echarts.getInstanceByDom(el);
   if(ins) charts.push({el, ins});
 });
-window.addEventListener("resize", ()=>charts.forEach(c=>c.ins.resize()));
+let _mob = MOB;
+window.addEventListener("resize", ()=>{
+  const now = window.matchMedia("(max-width:760px)").matches;
+  if(now !== _mob){ _mob = now; location.reload(); return; }   /* 横竖屏切换：重绘 */
+  charts.forEach(c=>c.ins.resize());
+});
 document.querySelectorAll(".exp").forEach(b=>b.addEventListener("click", ()=>{
   const ins = echarts.getInstanceByDom(document.getElementById(b.dataset.t));
   const url = ins.getDataURL({type:"png", pixelRatio:3, backgroundColor:"#fcfcfb"});
